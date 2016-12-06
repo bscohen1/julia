@@ -1729,7 +1729,7 @@ jl_value_t *jl_type_intersection_matching(jl_value_t *a, jl_value_t *b, jl_svec_
         if (*ans == jl_bottom_type) goto bot;
         // TODO: don't yet use the types returned by `intersect`, since it returns
         // Unions of Tuples and other code can only handle direct Tuples.
-        if (!jl_is_datatype(*ans)) {
+        if (!jl_is_datatype(jl_unwrap_unionall(*ans))) {
             *ans = b;
         }
         else {

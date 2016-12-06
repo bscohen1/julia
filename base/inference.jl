@@ -468,7 +468,10 @@ function type_depth(t::ANY)
     elseif isa(t, DataType)
         return (t::DataType).depth
     elseif isa(t, UnionAll)
-        return type_depth(t.body)
+        if t.var.ub === Any
+            return type_depth(t.body)
+        end
+        return max(type_depth(t.var.ub)+1, type_depth(t.body))
     end
     return 0
 end
@@ -480,7 +483,13 @@ function limit_type_depth(t::ANY, d::Int, cov::Bool=true, var::Union{Void,TypeVa
         end
         return Union{map(x->limit_type_depth(x, d+1, cov, var), (t.a,t.b))...}
     elseif isa(t,UnionAll)
-        return UnionAll(t.var, limit_type_depth(t.body, d, cov, var))
+        v = t.var
+        if v.ub === Any
+            return UnionAll(t.var, limit_type_depth(t.body, d, cov, var))
+        end
+        ub = limit_type_depth(v.ub, d+1, true, nothing)
+        v2 = TypeVar(v.name, v.lb, ub)
+        return UnionAll(v2, limit_type_depth(t{v2}, d, cov, var))
     elseif !isa(t,DataType)
         return t
     end
